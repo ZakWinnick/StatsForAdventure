@@ -3,7 +3,7 @@ python-dotenv==1.0.0
 flask-login==0.6.2
 flask-wtf==1.1.1
 gunicorn==22.0.0
-requests==2.31.0
+requests==2.32.2
 aiohttp==3.11.0b0
 cryptography==41.0.3
 rivian-python-client==0.1.0
