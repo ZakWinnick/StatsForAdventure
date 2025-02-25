@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Rivian Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6 mb-0">
+            <i class="fas fa-tachometer-alt me-2"></i>Your Vehicles
+        </h1>
+        <p class="text-muted">
+            Welcome back, {{ user_info.firstName }} {{ user_info.lastName }}!
+        </p>
+    </div>
+</div>
+
+{% if not vehicles %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    No vehicles found in your Rivian account.
+</div>
+{% else %}
+<div class="row row-cols-1 row-cols-md-2 g-4">
+    {% for vehicle_id, vehicle in vehicles.items() %}
+    <div class="col">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">
+                        {% if vehicle.vehicle.model == "R1T" %}
+                        <i class="fas fa-truck-pickup me-2"></i>
+                        {% elif vehicle.vehicle.model == "R1S" %}
+                        <i class="fas fa-car-side me-2"></i>
+                        {% else %}
+                        <i class="fas fa-car me-2"></i>
+                        {% endif %}
+                        {{ vehicle.name }}
+                    </h5>
+                    <span class="badge bg-{{ 'success' if vehicle.state == 'ACTIVATED' else 'secondary' }}">
+                        {{ vehicle.state|title }}
+                    </span>
+                </div>
+                
+                <p class="card-text">
+                    <small class="text-muted">VIN: {{ vehicle.vin }}</small>
+                </p>
+                
+                <div class="mb-3">
+                    <div class="fw-bold">Model:</div>
+                    <div>{{ vehicle.vehicle.model }} ({{ vehicle.vehicle.modelYear }})</div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="fw-bold">Configuration:</div>
+                    <div>
+                        {% if vehicle.vehicle.mobileConfiguration %}
+                        <div>Package: {{ vehicle.vehicle.mobileConfiguration.trimOption.optionName }}</div>
+                        <div>Exterior: {{ vehicle.vehicle.mobileConfiguration.exteriorColorOption.optionName }}</div>
+                        <div>Interior: {{ vehicle.vehicle.mobileConfiguration.interiorColorOption.optionName }}</div>
+                        {% else %}
+                        <div>Information not available</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{{ url_for('main.vehicle_detail', vehicle_id=vehicle_id) }}" 
+                   class="btn btn-outline-primary w-100">
+                    <i class="fas fa-external-link-alt me-2"></i>View Details
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

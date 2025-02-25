@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Rivian Dashboard{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">Login to Rivian Dashboard</h3>
+            </div>
+            <div class="card-body">
+                <p class="card-text text-muted mb-4">
+                    Enter your Rivian account credentials to access your vehicle dashboard.
+                </p>
+                
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-muted">
+                <div class="small">
+                    <i class="fas fa-info-circle me-1"></i>
+                    You'll need your Rivian account's email and password. If MFA is enabled, you'll be prompted for a verification code.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

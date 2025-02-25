@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Rivian Dashboard - Monitor Your Rivian Vehicle{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section text-center py-5">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-4">Monitor Your Rivian Vehicle</h1>
+        <p class="lead mb-5">A simple, elegant dashboard to track and control your Rivian R1T or R1S from anywhere.</p>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-lg px-4 me-md-2">
+            <i class="fas fa-sign-in-alt me-2"></i>Log In
+        </a>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container py-5">
+    <div class="row text-center mb-5">
+        <div class="col-lg-8 mx-auto">
+            <h2 class="fw-bold">Everything at a Glance</h2>
+            <p class="lead text-muted">Stay connected to your vehicle with real-time information and controls.</p>
+        </div>
+    </div>
+    
+    <div class="row g-4 py-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mx-auto">
+                        <i class="fas fa-battery-three-quarters"></i>
+                    </div>
+                    <h3 class="h5 fw-bold">Battery Monitoring</h3>
+                    <p class="text-muted">Track your vehicle's battery level, range, and charging status in real-time.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mx-auto">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <h3 class="h5 fw-bold">Location Tracking</h3>
+                    <p class="text-muted">Always know where your vehicle is with GPS location tracking.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mx-auto">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <h3 class="h5 fw-bold">Remote Controls</h3>
+                    <p class="text-muted">Lock, unlock, and control vehicle functions from anywhere.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works Section -->
+<div class="bg-light py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="fw-bold">How It Works</h2>
+                <p class="lead text-muted">Simple. Secure. No additional hardware needed.</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">1</div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="h5 fw-bold">Sign In with Rivian Account</h4>
+                        <p class="text-muted">Login using your existing Rivian account credentials.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">2</div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="h5 fw-bold">Authenticate Once</h4>
+                        <p class="text-muted">Securely connect to your vehicle with two-factor authentication.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">3</div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="h5 fw-bold">Monitor and Control</h4>
+                        <p class="text-muted">Get real-time updates and send commands to your vehicle.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Security Section -->
+<div class="container py-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <h2 class="fw-bold mb-3">Your Security is Our Priority</h2>
+            <p class="mb-4">We take the security of your vehicle and account seriously. All communication with your Rivian is encrypted and secured. Your credentials are never stored on our servers.</p>
+            <ul class="list-unstyled">
+                <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> End-to-end encryption</li>
+                <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Secure authentication</li>
+                <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Local credential storage</li>
+                <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> No third-party access</li>
+            </ul>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="bg-light p-3 rounded-circle d-inline-block">
+                            <i class="fas fa-shield-alt fa-3x text-primary"></i>
+                        </div>
+                    </div>
+                    <h4 class="text-center mb-3">Ready to connect?</h4>
+                    <p class="text-center mb-4">Connect to your Rivian dashboard to start monitoring your vehicle in real-time.</p>
+                    <div class="d-grid">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

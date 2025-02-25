@@ -1,0 +1,671 @@
+{% extends "base.html" %}
+
+{% block title %}{{ vehicle.name }} - Rivian Dashboard{% endblock %}
+
+{% block head %}
+<style>
+    .battery-indicator {
+        background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 50%, #FFC107 100%);
+        height: 20px;
+        border-radius: 10px;
+        margin-top: 5px;
+    }
+    
+    .card-hover:hover {
+        transform: translateY(-5px);
+        transition: transform 0.3s ease;
+    }
+    
+    .status-circle {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    .status-online {
+        background-color: #4CAF50;
+    }
+    
+    .status-offline {
+        background-color: #F44336;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Vehicle Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="display-6 mb-0">
+            {% if vehicle.vehicle.model == "R1T" %}
+            <i class="fas fa-truck-pickup me-2"></i>
+            {% elif vehicle.vehicle.model == "R1S" %}
+            <i class="fas fa-car-side me-2"></i>
+            {% else %}
+            <i class="fas fa-car me-2"></i>
+            {% endif %}
+            {{ vehicle.name }}
+        </h1>
+        <p class="text-muted">
+            {{ vehicle.vehicle.model }} ({{ vehicle.vehicle.modelYear }})
+            <span class="ms-2 badge bg-{{ 'success' if vehicle.state == 'ACTIVATED' else 'secondary' }}">
+                {{ vehicle.state|title }}
+            </span>
+        </p>
+    </div>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+    </a>
+</div>
+
+<!-- Auto-refresh message -->
+<div class="alert alert-info mb-4">
+    <i class="fas fa-sync me-2"></i>
+    This page automatically refreshes vehicle data every 30 seconds.
+</div>
+
+<!-- Connection Status & Battery Section -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-wifi me-2"></i>Connection Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    {% set is_online = vehicle_state.cloudConnection.lastSync %}
+                    <div class="status-circle {{ 'status-online' if is_online else 'status-offline' }}"></div>
+                    <div class="flex-grow-1">
+                        <h5 class="mb-0">{{ 'Online' if is_online else 'Offline' }}</h5>
+                        {% if is_online %}
+                        <small class="text-muted">
+                            Last connected: <span id="last-sync">{{ vehicle_state.cloudConnection.lastSync }}</span>
+                        </small>
+                        {% else %}
+                        <small class="text-muted">Vehicle is not connected to the cloud</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex align-items-center mt-3">
+                    <div class="me-3">
+                        <i class="fas fa-power-off fa-2x {{ 'text-success' if vehicle_state.powerState.value == 'ready' else 'text-secondary' }}"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">Power State</h5>
+                        <small class="text-muted" id="power-state">{{ vehicle_state.powerState.value|title }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-battery-three-quarters me-2"></i>Battery Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <h3 class="mb-0" id="battery-percentage">{{ "%.1f"|format(vehicle_state.batteryLevel.value) }}%</h3>
+                    <h5 class="mb-0">
+                        <span id="distance-to-empty">{{ vehicle_state.distanceToEmpty.value }}</span> miles
+                    </h5>
+                </div>
+                
+                <div class="progress mb-3" style="height: 20px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{ vehicle_state.batteryLevel.value }}%;" 
+                         id="battery-progress">
+                        {{ "%.1f"|format(vehicle_state.batteryLevel.value) }}%
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <i class="fas fa-plug fa-2x mb-2 {{ 'text-success' if vehicle_state.chargerState.value == 'charging_active' else 'text-secondary' }}"></i>
+                            <h6 class="mb-0" id="charging-state">
+                                {{ vehicle_state.chargerState.value|replace('_', ' ')|title }}
+                            </h6>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <i class="fas fa-battery-full fa-2x mb-2"></i>
+                            <h6 class="mb-0">
+                                Limit: <span id="battery-limit">{{ vehicle_state.batteryLimit.value }}</span>%
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if charging_data and charging_data.vehicleChargerState and charging_data.vehicleChargerState.value == 'charging_active' %}
+                <hr>
+                <div class="mt-3">
+                    <h6>Charging Information</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Power:</small>
+                            <div>{{ charging_data.power.value }} kW</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Time Remaining:</small>
+                            <div>{{ (charging_data.timeRemaining.value / 60)|int }} mins</div>
+                        </div>
+                        <div class="col-6 mt-2">
+                            <small class="text-muted">Added Range:</small>
+                            <div>{{ charging_data.rangeAddedThisSession.value }} mi</div>
+                        </div>
+                        <div class="col-6 mt-2">
+                            <small class="text-muted">Energy Added:</small>
+                            <div>{{ charging_data.totalChargedEnergy.value }} kWh</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vehicle Status & Controls -->
+<div class="row mb-4">
+    <!-- Vehicle Status -->
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Vehicle Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Doors -->
+                    <div class="col-md-6 mb-3">
+                        <h6 class="fw-bold"><i class="fas fa-door-open me-2"></i>Doors</h6>
+                        <div class="ms-4">
+                            <div>
+                                Front Left: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.doorFrontLeftClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.doorFrontLeftClosed.value|title }}
+                                </span>
+                                <span class="badge {{ 'bg-success' if vehicle_state.doorFrontLeftLocked.value == 'locked' else 'bg-warning' }}">
+                                    {{ vehicle_state.doorFrontLeftLocked.value|title }}
+                                </span>
+                            </div>
+                            <div>
+                                Front Right: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.doorFrontRightClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.doorFrontRightClosed.value|title }}
+                                </span>
+                                <span class="badge {{ 'bg-success' if vehicle_state.doorFrontRightLocked.value == 'locked' else 'bg-warning' }}">
+                                    {{ vehicle_state.doorFrontRightLocked.value|title }}
+                                </span>
+                            </div>
+                            <div>
+                                Rear Left: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.doorRearLeftClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.doorRearLeftClosed.value|title }}
+                                </span>
+                                <span class="badge {{ 'bg-success' if vehicle_state.doorRearLeftLocked.value == 'locked' else 'bg-warning' }}">
+                                    {{ vehicle_state.doorRearLeftLocked.value|title }}
+                                </span>
+                            </div>
+                            <div>
+                                Rear Right: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.doorRearRightClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.doorRearRightClosed.value|title }}
+                                </span>
+                                <span class="badge {{ 'bg-success' if vehicle_state.doorRearRightLocked.value == 'locked' else 'bg-warning' }}">
+                                    {{ vehicle_state.doorRearRightLocked.value|title }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Windows -->
+                    <div class="col-md-6 mb-3">
+                        <h6 class="fw-bold"><i class="fas fa-window-maximize me-2"></i>Windows</h6>
+                        <div class="ms-4">
+                            <div>
+                                Front Left: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.windowFrontLeftClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.windowFrontLeftClosed.value|title }}
+                                </span>
+                            </div>
+                            <div>
+                                Front Right: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.windowFrontRightClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.windowFrontRightClosed.value|title }}
+                                </span>
+                            </div>
+                            <div>
+                                Rear Left: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.windowRearLeftClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.windowRearLeftClosed.value|title }}
+                                </span>
+                            </div>
+                            <div>
+                                Rear Right: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.windowRearRightClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.windowRearRightClosed.value|title }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Climate -->
+                    <div class="col-md-6 mb-3">
+                        <h6 class="fw-bold"><i class="fas fa-temperature-half me-2"></i>Climate</h6>
+                        <div class="ms-4">
+                            <div>
+                                Interior: {{ vehicle_state.cabinClimateInteriorTemperature.value }}°C
+                            </div>
+                            <div>
+                                Driver Setting: {{ vehicle_state.cabinClimateDriverTemperature.value }}°C
+                            </div>
+                            <div>
+                                Preconditioning: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.cabinPreconditioningStatus.value != 'undefined' else 'bg-secondary' }}">
+                                    {{ vehicle_state.cabinPreconditioningStatus.value|title }}
+                                </span>
+                            </div>
+                            <div>
+                                Pet Mode: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.petModeStatus.value == 'On' else 'bg-secondary' }}">
+                                    {{ vehicle_state.petModeStatus.value }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Closures -->
+                    <div class="col-md-6 mb-3">
+                        <h6 class="fw-bold"><i class="fas fa-box-open me-2"></i>Closures</h6>
+                        <div class="ms-4">
+                            <div>
+                                Frunk: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.closureFrunkClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.closureFrunkClosed.value|title }}
+                                </span>
+                            </div>
+                            {% if vehicle.vehicle.model == "R1T" %}
+                            <div>
+                                Gear Tunnel Left: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.closureSideBinLeftClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.closureSideBinLeftClosed.value|title }}
+                                </span>
+                            </div>
+                            <div>
+                                Gear Tunnel Right: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.closureSideBinRightClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.closureSideBinRightClosed.value|title }}
+                                </span>
+                            </div>
+                            <div>
+                                Tonneau Cover: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.closureTonneauClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.closureTonneauClosed.value|title }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            <div>
+                                Tailgate: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.closureTailgateClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.closureTailgateClosed.value|title }}
+                                </span>
+                            </div>
+                            {% if vehicle.vehicle.model == "R1S" %}
+                            <div>
+                                Liftgate: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.closureLiftgateClosed.value == 'closed' else 'bg-danger' }}">
+                                    {{ vehicle_state.closureLiftgateClosed.value|title }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Gear Guard -->
+                    <div class="col-md-6 mb-3">
+                        <h6 class="fw-bold"><i class="fas fa-shield-alt me-2"></i>Gear Guard</h6>
+                        <div class="ms-4">
+                            <div>
+                                Status: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.gearGuardLocked.value == 'locked' else 'bg-secondary' }}">
+                                    {{ 'Enabled' if vehicle_state.gearGuardLocked.value == 'locked' else 'Disabled' }}
+                                </span>
+                            </div>
+                            <div>
+                                Video: 
+                                <span class="badge {{ 'bg-success' if vehicle_state.gearGuardVideoMode.value == 'AUTO' else 'bg-secondary' }}">
+                                    {{ vehicle_state.gearGuardVideoMode.value|title }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Vehicle Info -->
+                    <div class="col-md-6 mb-3">
+                        <h6 class="fw-bold"><i class="fas fa-info-circle me-2"></i>Vehicle Info</h6>
+                        <div class="ms-4">
+                            <div>
+                                Mileage: {{ (vehicle_state.vehicleMileage.value / 1000)|int }} miles
+                            </div>
+                            <div>
+                                Software: {{ vehicle_state.otaCurrentVersionYear.value }}.{{ vehicle_state.otaCurrentVersionWeek.value }}.{{ vehicle_state.otaCurrentVersionNumber.value }}
+                            </div>
+                            <div>
+                                VIN: {{ vehicle.vin }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vehicle Controls -->
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-sliders-h me-2"></i>Vehicle Controls
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Note:</strong> To use vehicle controls, you need to configure phone key details in the settings.
+                </div>
+                
+                <div class="row g-3">
+                    <!-- Lock/Unlock -->
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 py-3" disabled>
+                            <i class="fas fa-lock me-2"></i>Lock Vehicle
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 py-3" disabled>
+                            <i class="fas fa-unlock me-2"></i>Unlock Vehicle
+                        </button>
+                    </div>
+                    
+                    <!-- Climate -->
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 py-3" disabled>
+                            <i class="fas fa-snowflake me-2"></i>Start Climate
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 py-3" disabled>
+                            <i class="fas fa-power-off me-2"></i>Stop Climate
+                        </button>
+                    </div>
+                    
+                    <!-- Frunk -->
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 py-3" disabled>
+                            <i class="fas fa-box-open me-2"></i>Open Frunk
+                        </button>
+                    </div>
+                    
+                    <!-- Charging -->
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 py-3" disabled>
+                            <i class="fas fa-bolt me-2"></i>Start Charging
+                        </button>
+                    </div>
+                    
+                    <!-- Honk & Flash -->
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 py-3" disabled>
+                            <i class="fas fa-volume-up me-2"></i>Honk & Flash
+                        </button>
+                    </div>
+                    
+                    <!-- Wake Vehicle -->
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 py-3" disabled>
+                            <i class="fas fa-bell me-2"></i>Wake Vehicle
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <a href="#" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#phoneKeyModal">
+                        <i class="fas fa-key me-2"></i>Configure Phone Key
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Location -->
+<div class="row mb-4" id="location-section">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-map-marker-alt me-2"></i>Vehicle Location
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if vehicle_state.gnssLocation and vehicle_state.gnssLocation.latitude %}
+                <div id="map" style="height: 400px;"></div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Vehicle location is currently unavailable.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Phone Key Modal -->
+<div class="modal fade" id="phoneKeyModal" tabindex="-1" aria-labelledby="phoneKeyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="phoneKeyModalLabel">Configure Phone Key</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Important:</strong> To use vehicle controls, you need to provide your phone key credentials.
+                    These are required to authenticate commands to your vehicle.
+                </div>
+                
+                <form id="phoneKeyForm">
+                    <div class="mb-3">
+                        <label for="phoneId" class="form-label">Phone ID</label>
+                        <input type="text" class="form-control" id="phoneId" 
+                               placeholder="Enter your Rivian phone ID">
+                    </div>
+                    <div class="mb-3">
+                        <label for="identityId" class="form-label">Identity ID</label>
+                        <input type="text" class="form-control" id="identityId" 
+                               placeholder="Enter your Rivian identity ID">
+                    </div>
+                    <div class="mb-3">
+                        <label for="vehicleKey" class="form-label">Vehicle Key</label>
+                        <input type="text" class="form-control" id="vehicleKey" 
+                               placeholder="Enter your vehicle public key">
+                    </div>
+                    <div class="mb-3">
+                        <label for="privateKey" class="form-label">Private Key</label>
+                        <textarea class="form-control" id="privateKey" rows="3" 
+                                 placeholder="Enter your private key"></textarea>
+                    </div>
+                </form>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Note:</strong> These credentials are stored only in your browser and are never sent 
+                    to our servers. They are required to generate secure HMAC signatures for commands.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="savePhoneKey">Save Configuration</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Store vehicle information
+    const vehicleData = {
+        id: "{{ vehicle.id }}",
+        vin: "{{ vehicle.vin }}",
+        name: "{{ vehicle.name }}",
+        model: "{{ vehicle.vehicle.model }}"
+    };
+    
+    // Auto-refresh timer
+    let refreshTimer;
+    const REFRESH_INTERVAL = 30000; // 30 seconds
+    
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Format timestamps
+        formatTimestamps();
+        
+        // Initialize map if location available
+        {% if vehicle_state.gnssLocation and vehicle_state.gnssLocation.latitude %}
+        initMap(
+            {{ vehicle_state.gnssLocation.latitude }}, 
+            {{ vehicle_state.gnssLocation.longitude }}
+        );
+        {% endif %}
+        
+        // Load phone key configuration from localStorage
+        loadPhoneKeyConfig();
+        
+        // Save phone key configuration
+        document.getElementById('savePhoneKey').addEventListener('click', savePhoneKeyConfig);
+        
+        // Start auto-refresh timer
+        startRefreshTimer();
+    });
+    
+    // Format timestamps to local time
+    function formatTimestamps() {
+        const lastSync = document.getElementById('last-sync');
+        if (lastSync) {
+            const date = new Date("{{ vehicle_state.cloudConnection.lastSync }}");
+            lastSync.textContent = date.toLocaleString();
+        }
+    }
+    
+    // Initialize map
+    function initMap(lat, lng) {
+        // This is a placeholder for a map implementation
+        // You can use Google Maps, Leaflet, or similar
+        const mapContainer = document.getElementById('map');
+        if (mapContainer) {
+            mapContainer.innerHTML = `
+                <div class="alert alert-info">
+                    <p>Vehicle location: ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+                    <p>Map functionality will be implemented in a future update.</p>
+                </div>
+            `;
+        }
+    }
+    
+    // Load phone key configuration
+    function loadPhoneKeyConfig() {
+        const configKey = `phone_key_${vehicleData.id}`;
+        const savedConfig = localStorage.getItem(configKey);
+        
+        if (savedConfig) {
+            const config = JSON.parse(savedConfig);
+            document.getElementById('phoneId').value = config.phoneId || '';
+            document.getElementById('identityId').value = config.identityId || '';
+            document.getElementById('vehicleKey').value = config.vehicleKey || '';
+            document.getElementById('privateKey').value = config.privateKey || '';
+            
+            // Enable command buttons if we have all required data
+            if (config.phoneId && config.identityId && config.vehicleKey && config.privateKey) {
+                enableCommandButtons();
+            }
+        }
+    }
+    
+    // Save phone key configuration
+    function savePhoneKeyConfig() {
+        const phoneId = document.getElementById('phoneId').value;
+        const identityId = document.getElementById('identityId').value;
+        const vehicleKey = document.getElementById('vehicleKey').value;
+        const privateKey = document.getElementById('privateKey').value;
+        
+        // Validate required fields
+        if (!phoneId || !identityId || !vehicleKey || !privateKey) {
+            alert('All fields are required to enable vehicle commands.');
+            return;
+        }
+        
+        // Save configuration to localStorage
+        const configKey = `phone_key_${vehicleData.id}`;
+        const config = {
+            phoneId,
+            identityId,
+            vehicleKey,
+            privateKey
+        };
+        
+        localStorage.setItem(configKey, JSON.stringify(config));
+        
+        // Enable command buttons
+        enableCommandButtons();
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('phoneKeyModal'));
+        modal.hide();
+    }
+    
+    // Enable command buttons
+    function enableCommandButtons() {
+        // In a real implementation, this would attach click handlers to command buttons
+        // and enable them for user interaction
+        document.querySelectorAll('.card-body button.btn-outline-primary').forEach(button => {
+            button.disabled = false;
+        });
+    }
+    
+    // Start auto-refresh timer
+    function startRefreshTimer() {
+        if (refreshTimer) {
+            clearTimeout(refreshTimer);
+        }
+        
+        refreshTimer = setTimeout(function() {
+            // Reload the page to get fresh data
+            window.location.reload();
+        }, REFRESH_INTERVAL);
+    }
+    
+    // Clean up when leaving the page
+    window.addEventListener('beforeunload', function() {
+        if (refreshTimer) {
+            clearTimeout(refreshTimer);
+        }
+    });
+</script>
+{% endblock %}
