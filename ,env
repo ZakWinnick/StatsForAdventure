@@ -1,0 +1,15 @@
+# Application settings
+APP_NAME=Stats For Adventure
+SECRET_KEY=wXOMQaliuup0CSDlgHTCUlWbfTqyxXwe
+DEBUG=true
+
+# Server settings
+HOST=0.0.0.0
+PORT=8000
+
+# Session settings
+SESSION_SECRET_KEY=TEAEJ6Bw1re9ovNfYUZbZmNRFB2hpJeC
+SESSION_MAX_AGE=1800  # 30 minutes in seconds
+
+# Rivian API endpoint (should not need to change)
+RIVIAN_API_BASE_URL=https://rivian.com/api/gql
