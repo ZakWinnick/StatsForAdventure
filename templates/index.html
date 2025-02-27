@@ -123,11 +123,23 @@
                     }
                 });
                 
+                // Get the full response text for debugging
+                const responseText = await response.text();
+                console.log("Raw response:", response.status, responseText);
+                
                 if (!response.ok) {
-                    throw new Error('Failed to fetch user info');
+                    throw new Error(`Failed to fetch user info: ${response.status} ${responseText.substring(0, 150)}...`);
                 }
                 
-                const data = await response.json();
+                // Try to parse the response as JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error("Error parsing JSON response:", e);
+                    throw new Error("Invalid JSON response from server");
+                }
+                
                 console.log("User info response:", data);
                 const vehicles = data?.data?.currentUser?.vehicles || [];
                 renderVehicles(vehicles);
@@ -234,12 +246,23 @@
                     }
                 });
                 
+                // Get response text for debugging
+                const responseText = await response.text();
+                console.log("Vehicle state raw response:", responseText);
+                
                 if (!response.ok) {
-                    throw new Error('Failed to fetch vehicle state');
+                    throw new Error(`Failed to fetch vehicle state: ${response.status}`);
                 }
                 
-                const data = await response.json();
-                console.log("User info response:", data);
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error("Error parsing JSON vehicle state:", e);
+                    throw new Error("Invalid JSON response from server");
+                }
+                
+                console.log("Vehicle state response:", data);
                 const state = data?.data?.vehicleState || {};
                 
                 let html = `
@@ -278,12 +301,23 @@
                     }
                 });
                 
+                // Get response text for debugging
+                const responseText = await response.text();
+                console.log("Charging info raw response:", responseText);
+                
                 if (!response.ok) {
-                    throw new Error('Failed to fetch charging info');
+                    throw new Error(`Failed to fetch charging info: ${response.status}`);
                 }
                 
-                const data = await response.json();
-                console.log("User info response:", data);
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error("Error parsing JSON charging info:", e);
+                    throw new Error("Invalid JSON response from server");
+                }
+                
+                console.log("Charging info response:", data);
                 const info = data?.data?.getLiveSessionData || {};
                 
                 let html = `
@@ -379,6 +413,12 @@
         <div id="authenticated-view" class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md hidden">
             <h2 class="text-xl font-semibold mb-4">Your Rivian Dashboard</h2>
             
+            <!-- Debug Info -->
+            <div id="debug-info" class="mb-6 p-4 bg-gray-100 rounded-lg">
+                <h3 class="text-lg font-semibold mb-2">Debug Information</h3>
+                <p>If you're experiencing issues, check the browser console (F12) for detailed error messages.</p>
+            </div>
+            
             <!-- Vehicle Commands -->
             <div id="vehicle-commands" class="mb-6">
                 <h3 class="text-lg font-semibold mb-3">Vehicle Commands</h3>
@@ -397,6 +437,10 @@
                     <div class="mb-4">
                         <label class="block text-gray-700 mb-2" for="private-key">Phone Private Key (keep this secure!)</label>
                         <textarea id="private-key" class="w-full px-3 py-2 border rounded-lg" rows="3" placeholder="Your enrolled phone private key"></textarea>
+                        <p class="text-sm text-gray-600 mt-1">
+                            This key is generated when you enroll your phone as a key in the Rivian mobile app.
+                            For testing, you can use a placeholder key.
+                        </p>
                     </div>
                     <button id="send-command-btn" class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Send Command</button>
                     <div id="command-result" class="mt-4"></div>
