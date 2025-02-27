@@ -1,31 +1,35 @@
-# Stats For Adventure
+cat > /opt/rivian-web/README.md << 'EOF'
+# Stats for Adventure
 
-A web dashboard for Rivian vehicle owners to monitor and control their vehicles.
+A web interface for the Rivian API that allows you to:
+- View vehicle state and information
+- Check charging status
+- Send commands to your vehicle
 
-## Features
+## Security Notes
 
-- **Real-time Vehicle Stats**: Battery level, range, door status, and more
-- **Charging Information**: View active charging sessions and stats
-- **Vehicle Control**: Send commands to your vehicle (lock/unlock, climate control, etc.)
-- **Secure Authentication**: Full support for Rivian's MFA authentication
-- **Privacy-focused**: No user data stored between sessions
+- Authentication tokens are stored only in your browser's localStorage
+- No data is stored on the server
+- Communication is encrypted via HTTPS
+- The application requires Rivian account credentials and MFA verification
 
-## Security & Privacy
+## Usage
 
-This application:
-- Does not store any Rivian credentials
-- Only keeps authentication tokens in encrypted, server-side sessions
-- Requires re-authentication for each new browser session
-- Transmits all data over secure HTTPS
+1. Access the web interface at https://statsforadventure.com
+2. Log in with your Rivian account credentials
+3. Enter the MFA code sent to your phone
+4. View your vehicles and their status
+5. Send commands as needed
 
-## Contributing
+## Vehicle Commands
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+To send commands to your vehicle, you need:
+1. An enrolled phone in your Rivian account
+2. Your private key from the phone enrollment process
+3. Select the command and vehicle, then provide the private key
 
-## Disclaimer
+## Maintenance
 
-This is an unofficial application and is not affiliated with, endorsed by, or connected to Rivian Automotive Inc. in any way. Use at your own risk.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+- Check logs: `journalctl -u rivian-web`
+- Restart service: `systemctl restart rivian-web`
+- Update application: Pull latest changes and restart service
