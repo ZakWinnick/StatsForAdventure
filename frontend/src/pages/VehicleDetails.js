@@ -227,6 +227,7 @@ const VehicleDetails = () => {
     }
   };
   
+  
   useEffect(() => {
     if (isAuthenticated && vin) {
       fetchVehicleData();
@@ -244,6 +245,27 @@ const VehicleDetails = () => {
   if (!vehicle) {
     return <Navigate to="/dashboard" />;
   }
+
+  // Check if we have the vehicle in the vehicles array
+useEffect(() => {
+  if (!authLoading && !vehicle && isAuthenticated) {
+    // If authenticated but no vehicle found, go back to dashboard
+    navigate('/dashboard');
+  }
+}, [vehicle, authLoading, isAuthenticated, navigate]);
+
+// Handle if we're not authenticated or data is loading
+if (authLoading) {
+  return <LoadingText>Loading...</LoadingText>;
+}
+
+if (!isAuthenticated) {
+  return <Navigate to="/login" />;
+}
+
+if (!vehicle) {
+  return <LoadingText>Vehicle not found. Redirecting...</LoadingText>;
+}
   
   const handleRefresh = () => {
     fetchVehicleData();

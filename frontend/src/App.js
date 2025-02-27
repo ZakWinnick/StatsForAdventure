@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 
 // Components
@@ -48,6 +48,26 @@ const ContentContainer = styled.main`
   padding: 2rem 0;
 `;
 
+// Protected route component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useContext(AuthContext);
+  
+  if (loading) {
+    return <div style={{ 
+      padding: '2rem', 
+      textAlign: 'center', 
+      fontSize: '1.2rem',
+      color: '#777' 
+    }}>Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  
+  return children;
+};
+
 const App = () => {
   return (
     <ThemeProvider theme={theme}>
@@ -56,13 +76,21 @@ const App = () => {
           <AppContainer>
             <Navbar />
             <ContentContainer>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/vehicle/:vin" element={<VehicleDetails />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+            <Routes>
+  <Route path="/" element={<Home />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/dashboard" element={
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  } />
+  <Route path="/vehicle/:vin" element={
+    <ProtectedRoute>
+      <VehicleDetails />
+    </ProtectedRoute>
+  } />
+  <Route path="*" element={<NotFound />} />
+</Routes>
             </ContentContainer>
             <Footer />
           </AppContainer>

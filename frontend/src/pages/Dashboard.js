@@ -134,6 +134,15 @@ const Dashboard = () => {
     return <Navigate to="/login" />;
   }
   
+// Handle if we're not authenticated or data is loading
+if (loading) {
+  return <div className="container"><LoadingText>Loading your vehicles...</LoadingText></div>;
+}
+
+if (!isAuthenticated) {
+  return <Navigate to="/login" />;
+}
+
   return (
     <DashboardContainer>
       <DashboardHeader>
