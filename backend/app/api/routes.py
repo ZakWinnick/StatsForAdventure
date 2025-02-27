@@ -69,3 +69,14 @@ async def get_vehicle_state(vin: str):
     except Exception as e:
         logging.error(f"Get vehicle state error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/logout")
+async def logout():
+    """Log out the user."""
+    # Reset the client's tokens
+    client._access_token = None
+    client._refresh_token = None
+    client._user_session_token = None
+    client._csrf_token = None
+    client._cookies = {}
+    return {"status": "success"}
