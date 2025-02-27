@@ -73,10 +73,6 @@ async def get_vehicle_state(vin: str):
 @router.post("/logout")
 async def logout():
     """Log out the user."""
-    # Reset the client's tokens
-    client._access_token = None
-    client._refresh_token = None
-    client._user_session_token = None
-    client._csrf_token = None
-    client._cookies = {}
+    # Reset the client's authentication state
+    client._authenticated = False
     return {"status": "success"}
